@@ -245,18 +245,18 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="question" id="mainQuestion">Benim en iyi arkadaşım olmak ister misin? 💕</h1>
+        <h1 class="question" id="mainQuestion"></h1>
         <p class="message" id="message"></p>
         <div class="buttons">
-            <button class="btn btn-yes" id="yesBtn">Evet! 😍</button>
-            <button class="btn btn-no" id="noBtn">Hayır 😔</button>
+            <button class="btn btn-yes" id="yesBtn"></button>
+            <button class="btn btn-no" id="noBtn"></button>
         </div>
     </div>
 
     <div class="success-screen" id="successScreen">
         <div class="success-content">
-            <h1 class="success-title" id="successTitle">🎉 YAŞASIN! 🎉</h1>
-            <p class="success-message" id="successMessage">Biliyordum en iyi arkadaş olacağımızı! 💖</p>
+            <h1 class="success-title" id="successTitle"></h1>
+            <p class="success-message" id="successMessage"></p>
         </div>
     </div>
 
@@ -304,22 +304,7 @@
         const successScreen = document.getElementById('successScreen');
         
         let messageIndex = 0;
-        let escapeCount = 0;
         let hasEscaped = false;
-
-        function getRandomPosition() {
-            // Ekranın ortasını bul
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-            
-            // Ortadan sadece 100px her yöne hareket edebilsin
-            const range = 100;
-            
-            return {
-                x: centerX + (Math.random() - 0.5) * range * 2,
-                y: centerY + (Math.random() - 0.5) * range * 2
-            };
-        }
 
         function moveButton() {
             if (!hasEscaped) {
@@ -327,73 +312,74 @@
                 hasEscaped = true;
             }
             
-            // Container'ın pozisyonunu al
             const container = document.querySelector('.container');
             const containerRect = container.getBoundingClientRect();
-            const yesBtn = document.getElementById('yesBtn');
             const yesBtnRect = yesBtn.getBoundingClientRect();
+            const noBtnRect = noBtn.getBoundingClientRect();
             
             let newX, newY, distance;
-            let attempts = 0;
-            const maxAttempts = 20;
+            const minDistance = 120; // Evet butonundan minimum uzaklık
+            const maxAttempts = 50;
             
-            do {
-                // Container içinde rastgele pozisyon
-                const containerCenterX = containerRect.width / 2;
-                const containerCenterY = containerRect.height / 2;
-                const range = 220; // Daha uzağa kaçış
+            for (let i = 0; i < maxAttempts; i++) {
+                // Container'ın içinde rastgele bir nokta seç
+                const randomX = Math.random() * (containerRect.width - noBtnRect.width);
+                const randomY = Math.random() * (containerRect.height - noBtnRect.height);
                 
-                newX = containerCenterX + (Math.random() - 0.5) * range * 2;
-                newY = containerCenterY + (Math.random() - 0.5) * range * 2;
-                
-                // Evet butonu ile mesafeyi hesapla
-                const yesBtnCenterX = yesBtnRect.left - containerRect.left + yesBtnRect.width/2;
-                const yesBtnCenterY = yesBtnRect.top - containerRect.top + yesBtnRect.height/2;
+                // Evet butonu ile rastgele nokta arasındaki mesafeyi hesapla
+                const yesBtnCenterX = yesBtnRect.left - containerRect.left + yesBtnRect.width / 2;
+                const yesBtnCenterY = yesBtnRect.top - containerRect.top + yesBtnRect.height / 2;
+                const noBtnCenterX = randomX + noBtnRect.width / 2;
+                const noBtnCenterY = randomY + noBtnRect.height / 2;
                 
                 distance = Math.sqrt(
-                    Math.pow(newX - yesBtnCenterX, 2) +
-                    Math.pow(newY - yesBtnCenterY, 2)
+                    Math.pow(noBtnCenterX - yesBtnCenterX, 2) +
+                    Math.pow(noBtnCenterY - yesBtnCenterY, 2)
                 );
-                
-                attempts++;
-            } while (distance < 120 && attempts < maxAttempts); // Evet butonundan 120px uzakta olsun
+
+                if (distance >= minDistance) {
+                    newX = randomX;
+                    newY = randomY;
+                    break;
+                }
+            }
             
-            noBtn.style.left = newX + 'px';
-            noBtn.style.top = newY + 'px';
+            // Eğer uygun bir pozisyon bulunamazsa, mevcut pozisyonun etrafında küçük bir kaçış yap
+            if (typeof newX === 'undefined') {
+                newX = noBtn.offsetLeft + (Math.random() - 0.5) * 50;
+                newY = noBtn.offsetTop + (Math.random() - 0.5) * 50;
+            }
             
-            // Mesajı değiştir
+            // Butonun container içinde kalmasını sağla
+            newX = Math.max(0, Math.min(newX, containerRect.width - noBtnRect.width));
+            newY = Math.max(0, Math.min(newY, containerRect.height - noBtnRect.height));
+            
+            noBtn.style.left = `${newX}px`;
+            noBtn.style.top = `${newY}px`;
+            
             if (messageIndex < ESCAPE_MESSAGES.length) {
                 message.textContent = ESCAPE_MESSAGES[messageIndex];
                 messageIndex++;
             } else {
-                // Mesajları tekrar döngüye sok
                 messageIndex = 0;
                 message.textContent = ESCAPE_MESSAGES[messageIndex];
                 messageIndex++;
             }
-            
-            escapeCount++;
         }
 
-        // Mouse ile butona yaklaşıldığında kaçır
         noBtn.addEventListener('mouseenter', moveButton);
-        
-        // Mobil için dokunma
         noBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
             moveButton();
         });
 
-        // Evet butonuna tıklandığında
         yesBtn.addEventListener('click', function() {
             createConfetti();
             successScreen.style.display = 'flex';
         });
 
-        // Konfeti efekti
         function createConfetti() {
             const colors = ['#f1c40f', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
-            
             for (let i = 0; i < 100; i++) {
                 setTimeout(() => {
                     const confetti = document.createElement('div');
@@ -401,9 +387,7 @@
                     confetti.style.left = Math.random() * 100 + 'vw';
                     confetti.style.backgroundColor = colors[Math.random() * colors.length | 0];
                     confetti.style.animation = `confettiFall ${Math.random() * 3 + 2}s linear forwards`;
-                    
                     document.body.appendChild(confetti);
-                    
                     setTimeout(() => {
                         confetti.remove();
                     }, 5000);
